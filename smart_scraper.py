@@ -736,7 +736,7 @@ def tag_courses(driver, level_name, csv_path, status_table):
             log(f"Error deselecting last Study Area: {e}")
 
 
-def worker(country_name, selected_levels, layout, progress, page_task, status_table):
+def worker(country_name, selected_levels, layout, progress, page_task, status_table, selection_str):
     driver = get_driver()
     try:
         login_if_needed(driver)
@@ -747,7 +747,9 @@ def worker(country_name, selected_levels, layout, progress, page_task, status_ta
             status_table["Current Study Area"] = "None (Base Scraping)"
             status_table["Current Requirement"] = "None"
 
-            csv_filename = f"{country_name.replace(' ', '_')}.csv"
+            # Sanitize selection string for filename
+            safe_selection = selection_str.replace(',', '_').replace(' ', '')
+            csv_filename = f"{country_name.replace(' ', '_')}_{safe_selection}.csv"
             csv_path = os.path.join(os.getcwd(), csv_filename)
 
             # Select Level
@@ -835,6 +837,7 @@ def main():
             progress,
             page_task,
             status_table_data,
+            selection,
         ),
     )
     t.start()
