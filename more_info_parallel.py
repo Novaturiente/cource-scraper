@@ -429,6 +429,12 @@ def select_input_file():
     """
     console = Console()
     csv_files = [f for f in os.listdir("./split") if f.endswith(".csv")]
+    # Sort files numerically based on the prefix number
+    try:
+        csv_files.sort(key=lambda f: int(f.split('_')[0]))
+    except ValueError:
+        # Fallback to standard sort if filenames don't match the expected pattern
+        csv_files.sort()
     
     if not csv_files:
         console.print("[bold red]No CSV files found in the 'split' directory![/bold red]")
