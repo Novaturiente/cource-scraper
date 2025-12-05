@@ -339,26 +339,36 @@ def scrape_base_courses(driver, level_name, csv_path, progress, page_task):
                     # Speciality
                     data["Speciality"] = ""
                     try:
-                        badges = [
-                            s.text.strip()
-                            for s in article.find_elements(
-                                By.CSS_SELECTOR, "div.highlight-badge-wrap > span"
+                        badges = []
+                        badge_elements = article.find_elements(By.CSS_SELECTOR, "div.highlight-badge-wrap > span")
+                        for badge in badge_elements:
+                            # Extract only text nodes to ignore icon text
+                            text = driver.execute_script(
+                                "return Array.from(arguments[0].childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim();", 
+                                badge
                             )
-                        ]
-                        data["Speciality"] = ", ".join([b for b in badges if b])
+                            if text:
+                                badges.append(text)
+                        data["Speciality"] = ", ".join(badges)
                     except:
                         pass
 
                     # Rankings
                     data["Rankings"] = ""
                     try:
-                        ranks = [
-                            r.text.strip().replace("\n", " ")
-                            for r in article.find_elements(
-                                By.CSS_SELECTOR, "div.rankborder.sp-rankborder"
-                            )
-                        ]
-                        data["Rankings"] = ", ".join([r for r in ranks if r])
+                        ranking_section = article.find_element(By.CSS_SELECTOR, "div.ranking-details")
+                        rank_divs = ranking_section.find_elements(By.CSS_SELECTOR, "div.rankborder.sp-rankborder")
+                        rankings = []
+                        for rank_div in rank_divs:
+                            try:
+                                rank_text = rank_div.find_element(By.CSS_SELECTOR, "span.rank").text.strip()
+                                ranking_text = rank_div.find_element(By.CSS_SELECTOR, "span.ranking").text.strip()
+                                if rank_text and ranking_text:
+                                    rankings.append(f"{rank_text} {ranking_text}")
+                            except:
+                                pass
+                        if rankings:
+                            data["Rankings"] = ", ".join(rankings)
                     except:
                         pass
 
@@ -374,9 +384,11 @@ def scrape_base_courses(driver, level_name, csv_path, progress, page_task):
                         if "Duration:" in line and i + 1 < len(lines):
                             data["Duration"] = lines[i + 1]
                         if "Yearly Tuition Fee:" in line:
-                            data["Yearly Tuition Fee"] = line.replace(
-                                "Yearly Tuition Fee:", ""
-                            ).strip()
+                            fee_text = line.replace("Yearly Tuition Fee:", "").strip()
+                            if fee_text:
+                                data["Yearly Tuition Fee"] = fee_text
+                            elif i + 1 < len(lines):
+                                data["Yearly Tuition Fee"] = lines[i + 1].split("Application Fee:")[0].strip()
                         if "Application Fee:" in line:
                             data["Application Fee"] = line.replace(
                                 "Application Fee:", ""
